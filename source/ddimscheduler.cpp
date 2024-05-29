@@ -172,6 +172,45 @@ namespace Scheduler {
         delete meta_ptr;
         meta_ptr = nullptr;
     }
+
+    int DDIMScheduler::add_noise(std::vector<float> &sample, const std::vector<int> &sample_size,
+                                 std::vector<float> &noise, const std::vector<int> &noise_size, int timesteps,
+                                 std::vector<float> &noisy_samples) {
+        assert(meta_ptr);
+        if(sample_size.size() != noise_size.size()){
+            LOG_ERROR("Sample and noise must has the same shape.\n");
+            return -1;
+        }
+        for(int i = 0; i < sample_size.size(); i++){
+            if(sample_size[i] != noise_size[i]){
+                LOG_ERROR("Sample and noise must has the same shape.\n");
+                return -1;
+            }
+        }
+
+        auto sqrt_alpha_prod = sqrt(meta_ptr->alphas_cumprod[timesteps]);
+        auto sqrt_one_minus_alpha_prod = sqrt(1 - meta_ptr->alphas_cumprod[timesteps]);
+
+        auto length = std::accumulate(sample_size.begin(), sample_size.end(), 1, std::multiplies<int>());
+
+        noisy_samples.clear();
+        noisy_samples.resize(length);
+
+        Eigen::TensorMap<Eigen::Tensor<float, 4, Eigen::RowMajor>> mat_sample(sample.data(),
+                                                                              sample_size[0], sample_size[1],
+                                                                              sample_size[2], sample_size[3]);
+        Eigen::TensorMap<Eigen::Tensor<float, 4, Eigen::RowMajor>> mat_noise(noise.data(),
+                                                                              sample_size[0], sample_size[1],
+                                                                              sample_size[2], sample_size[3]);
+        Eigen::Tensor<float, 4, Eigen::RowMajor> result = mat_sample * sqrt_alpha_prod + mat_noise * sqrt_one_minus_alpha_prod;
+        noisy_samples.assign(result.data(), result.data() + result.size());
+//        for(int i = 0; i < length; i++){
+//            noisy_samples[i] = sqrt_alpha_prod * sample[i] + sqrt_one_minus_alpha_prod * noise[i];
+//        }
+        return 0;
+    }
+
+
 }
 
 

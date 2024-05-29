@@ -49,6 +49,9 @@ namespace Scheduler {
                  std::vector<float> &prev_sample,
                  int timestep, float eta = 0.0, bool use_clipped_model_output = false);
 
+        int add_noise(std::vector<float> &sample, const std::vector<int> &sample_size,
+                      std::vector<float> &noise, const std::vector<int> &noise_size, int timesteps,
+                      std::vector<float> &noisy_samples);
     private:
         float get_variance(int timestep, int prev_timestep);
     };
